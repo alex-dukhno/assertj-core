@@ -18,6 +18,7 @@ import static org.assertj.core.api.Assertions.catchThrowableOfType;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 /**
  * The assertions classes have to be in a package other than org.assertj to test
@@ -33,7 +34,7 @@ public class CustomSoftAssertionsLineNumberTest {
     MyProjectSoftAssertions softly = new MyProjectSoftAssertions();
     softly.assertThat(new MyProjectClass("v1")).hasValue("v2");
     // WHEN
-    AssertionError error = catchThrowableOfType(() -> softly.assertAll(), AssertionError.class);
+    AssertionFailedError error = catchThrowableOfType(() -> softly.assertAll(), AssertionFailedError.class);
     // THEN
     assertThat(error).hasMessageContaining(format("Expecting value to be <v2> but was <v1>:%n" +
                                                   "at CustomSoftAssertionsLineNumberTest.should_print_line_numbers_of_failed_assertions_even_if_custom_assertion_in_non_assertj_package(CustomSoftAssertionsLineNumberTest.java:31)"));

@@ -62,8 +62,7 @@ public class AbstractSoftAssertions {
    * @since 2.6.0 / 3.6.0
    */
   public void fail(String failureMessage, Throwable realCause) {
-    AssertionError error = Failures.instance().failure(failureMessage);
-    error.initCause(realCause);
+    AssertionError error = Failures.instance().failure(failureMessage, realCause);
     proxies.collectError(error);
   }
 
