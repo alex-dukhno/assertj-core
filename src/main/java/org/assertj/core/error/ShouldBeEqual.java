@@ -42,17 +42,13 @@ public class ShouldBeEqual implements AssertionErrorFactory {
   private static final String EXPECTED_BUT_WAS_MESSAGE = "%nExpecting:%n <%s>%nto be equal to:%n <%s>%nbut was not.";
   private static final String EXPECTED_BUT_WAS_MESSAGE_USING_COMPARATOR = "%nExpecting:%n <%s>%nto be equal to:%n " +
                                                                           "<%s>%n%s%nbut was not.";
-  private static final Class<?>[] MSG_ARG_TYPES = array(String.class, String.class, String.class);
-  private static final Class<?>[] MSG_ARG_TYPES_FOR_ASSERTION_FAILED_ERROR = array(String.class, Object.class,
-                                                                                   Object.class);
   protected final Object actual;
   protected final Object expected;
   @VisibleForTesting
   final MessageFormatter messageFormatter = MessageFormatter.instance();
   private final ComparisonStrategy comparisonStrategy;
   private Representation representation;
-  @VisibleForTesting
-  ConstructorInvoker constructorInvoker = new ConstructorInvoker();
+  AssertionErrorCreator creator = new AssertionErrorCreator();
   @VisibleForTesting
   DescriptionFormatter descriptionFormatter = DescriptionFormatter.instance();
 
@@ -118,15 +114,9 @@ public class ShouldBeEqual implements AssertionErrorFactory {
     // comparison strategy in the assertion error message to make it clear to the user it was used.
     if (comparisonStrategy.isStandard() && !actualAndExpectedHaveSameStringRepresentation()) {
       // comparison strategy is standard -> try to build an AssertionFailedError used in JUnit 5 that is nicely displayed in IDEs
-      AssertionError assertionFailedError = assertionFailedError(message);
-      // assertionFailedError != null means that JUnit 5 and opentest4j was in the classpath
-      if (assertionFailedError != null) return assertionFailedError;
-      // Junit5 was not used, try to build a JUnit ComparisonFailure that is nicely displayed in IDEs
-      AssertionError error = comparisonFailure(description);
-      // error != null means that JUnit 4 was in the classpath and we build a ComparisonFailure.
-      if (error != null) return error;
+      return creator.assertionError(message);
     }
-    AssertionError assertionFailedError = assertionFailedError(message);
+    AssertionError assertionFailedError = creator.assertionError(message);
     // assertionFailedError != null means that JUnit 5 and opentest4j was in the classpath
     if (assertionFailedError != null) return assertionFailedError;
     // No JUnit in the classpath => fall back to default error message
@@ -180,44 +170,6 @@ public class ShouldBeEqual implements AssertionErrorFactory {
                                      detailedActual(), detailedExpected(), comparisonStrategy);
     return messageFormatter.format(description, representation, EXPECTED_BUT_WAS_MESSAGE, detailedActual(),
                                    detailedExpected());
-  }
-
-  private AssertionError assertionFailedError(String message) {
-    try {
-      Object o = constructorInvoker.newInstance("org.opentest4j.AssertionFailedError",
-                                                MSG_ARG_TYPES_FOR_ASSERTION_FAILED_ERROR,
-                                                message,
-                                                expected,
-                                                actual);
-      if (o instanceof AssertionError) {
-        AssertionError assertionError = (AssertionError) o;
-        Failures.instance().removeAssertJRelatedElementsFromStackTraceIfNeeded(assertionError);
-        return assertionError;
-      }
-      return null;
-    } catch (Throwable e) {
-      return null;
-    }
-  }
-
-  private AssertionError comparisonFailure(Description description) {
-    try {
-      AssertionError comparisonFailure = newComparisonFailure(descriptionFormatter.format(description).trim());
-      Failures.instance().removeAssertJRelatedElementsFromStackTraceIfNeeded(comparisonFailure);
-      return comparisonFailure;
-    } catch (Throwable e) {
-      return null;
-    }
-  }
-
-  private AssertionError newComparisonFailure(String description) throws Exception {
-    Object o = constructorInvoker.newInstance("org.junit.ComparisonFailure", MSG_ARG_TYPES, msgArgs(description));
-    if (o instanceof AssertionError) return (AssertionError) o;
-    return null;
-  }
-
-  private Object[] msgArgs(String description) {
-    return array(description, representation.toStringOf(expected), representation.toStringOf(actual));
   }
 
   private String detailedActual() {

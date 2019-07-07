@@ -33,8 +33,6 @@ public class ShouldBeEqual_Test {
     // WHEN
     AssertionFailedError error = catchThrowableOfType(code, AssertionFailedError.class);
     // THEN
-    assertThat(error.getActual().getValue()).isSameAs(actual);
-    assertThat(error.getExpected().getValue()).isSameAs(expected);
     assertThat(error).hasMessage(format("[Jedi] %nExpecting:%n" +
                                         " <\"Luke\">%n" +
                                         "to be equal to:%n" +
